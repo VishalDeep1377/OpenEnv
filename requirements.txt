@@ -1,0 +1,7 @@
+openenv-core>=0.2.0
+pydantic>=2.0.0
+fastapi>=0.100.0
+openai>=1.0.0
+python-dotenv>=1.0.0
+uvicorn>=0.23.0
+pytest>=7.4.0
