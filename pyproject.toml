@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project.scripts]
-server = "server.app:main"
+exec-server = "server.app:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["server", "."]

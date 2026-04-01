@@ -14,4 +14,4 @@ RUN pip install -e .
 EXPOSE 7860
 
 # Run the project script defined in pyproject.toml
-CMD ["server"]
+CMD ["exec-server"]
