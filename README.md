@@ -1,3 +1,4 @@
+
 ---
 title: ExecEnv
 emoji: 💼
@@ -10,7 +11,8 @@ tags:
 ---
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/master/icons/briefcase.svg" width="100" height="100">
+  <img width="500" alt="openenv" src="https://github.com/user-attachments/assets/8c1cae2d-6877-4592-8a74-902cca17dfec" />
+  
   <h1>🤖 ExecEnv: The AI Executive Assistant</h1>
   <p><b>State-of-the-Art OpenEnv for Evaluating Autonomous Agent Intelligence</b></p>
 
