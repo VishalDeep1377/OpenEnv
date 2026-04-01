@@ -1,23 +1,28 @@
-name: "ExecEnv"
+# Official OpenEnv Registry Metadata
+name: "exec-env"
 version: "1.0.0"
 description: "AI Executive Assistant environment for Email and Calendar triage."
-benchmark: "exec_env"
-tags: ["assistant", "pydantic", "real-world", "email", "calendar"]
-author: "Antigravity Agent"
+
+# Environment Architecture (Validator Requirements)
+entry_point: "server.app:app"
+mode: "multi-mode"
+
+# Official Tags
+tags: 
+  - "openenv"
+  - "agent-eval"
+  - "assistant"
+
+# Benchmark Task Suite
 tasks:
-  - name: "triage"
+  - id: "triage"
     difficulty: "easy"
-    description: "Label urgent emails and delete spam."
-  - name: "schedule"
+  - id: "schedule"
     difficulty: "medium"
-    description: "Book a meeting based on email availability."
-  - name: "reschedule"
+  - id: "reschedule"
     difficulty: "hard"
-    description: "Handle scheduling conflicts by rescheduling low-priority items."
-action_space:
-  type: "dict"
-  description: "Typed action with action_type and parameters for email/calendar management."
-observation_space:
-  type: "dict"
-  description: "Typed observation with emails and calendar lists."
+
+# Space Configuration
+action_space: "ExecAction (Pydantic)"
+observation_space: "ExecObservation (Pydantic)"
 reward_range: [0.0, 1.0]
