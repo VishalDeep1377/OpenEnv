@@ -26,5 +26,8 @@ dev = [
     "httpx>=0.25.0",
 ]
 
+[project.scripts]
+server = "server.app:main"
+
 [tool.hatch.build.targets.wheel]
-packages = ["."]
+packages = ["server", "."]

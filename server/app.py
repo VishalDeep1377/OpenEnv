@@ -1,4 +1,4 @@
-from typing import Dict, Any
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from env import ExecEnv
 from models import ExecAction, ExecObservation
@@ -9,7 +9,7 @@ env_instance = ExecEnv()
 
 @app.get("/")
 def read_root():
-    return {"message": "ExecEnv Server is running", "ports": "7860"}
+    return {"message": "ExecEnv Server is running", "port": 7860}
 
 @app.post("/reset")
 async def reset():
@@ -45,3 +45,10 @@ async def get_state():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+def main():
+    """The entry point for the [project.scripts] 'server' command."""
+    uvicorn.run(app, host="0.0.0.0", port=7860)
+
+if __name__ == "__main__":
+    main()
