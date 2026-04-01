@@ -16,6 +16,9 @@ COPY . .
 ENV PORT=7860
 EXPOSE 7860
 
-# The command to start the environment server
-# Using uvicorn to serve the FastAPI app on port 7860
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "7860"]
+# Install the local package in editable mode to register the 'server' command
+RUN pip install -e .
+
+# The command to start the environment server using the registered entry point
+# This satisfies the [project.scripts] validation requirement
+CMD ["server"]
