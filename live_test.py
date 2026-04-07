@@ -4,13 +4,14 @@ import os
 from openai import OpenAI
 
 # --- Configuration ---
-# This is your live Hugging Face Space URL
-SPACE_URL = "https://vishaldeep1022-exec-env-assistant.hf.space" 
-API_KEY = os.getenv("HF_TOKEN") or "HF_Token"
-MODEL = "Qwen/Qwen2.5-72B-Instruct"
+# Use environment variables strictly as required by the hackathon proxy validator
+API_BASE_URL = os.environ["API_BASE_URL"]
+API_KEY = os.environ["API_KEY"]
+MODEL = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+SPACE_URL = os.getenv("SPACE_URL", "https://vishaldeep1022-exec-env-assistant.hf.space")
 
-# Initialize the OpenAI client pointing to Hugging Face's inference server
-client = OpenAI(base_url="https://router.huggingface.co/v1", api_key=API_KEY)
+# Initialize the OpenAI client pointing to the required proxy
+client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
 async def run_live_demo():
     print(f"🚀 [INIT] Connecting to Live Space at: {SPACE_URL}")

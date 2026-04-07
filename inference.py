@@ -6,10 +6,10 @@ from typing import List, Optional
 from openai import OpenAI
 from exec_env import ExecAction, ExecEnv, ActionType
 
-# Correctly use environmental variables as required by the hackathon checklist
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+# Strictly use the API_BASE_URL and API_KEY environment variables provided by the validator
+API_BASE_URL = os.environ["API_BASE_URL"]
+API_KEY = os.environ["API_KEY"]
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-HF_TOKEN = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
 
 # Optional - for from_docker_image()
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
@@ -19,6 +19,8 @@ BENCHMARK = "exec_env"
 MAX_STEPS = 10
 TEMPERATURE = 0.0
 MAX_TOKENS = 512
+SUCCESS_SCORE_THRESHOLD = 0.1
+MAX_TOTAL_REWARD = 2.0  # Normalized for the 2-step baseline triage task
 
 SYSTEM_PROMPT = textwrap.dedent(
     """
@@ -73,14 +75,14 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-    print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}", flush=True)
+    print(f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
 
 async def main() -> None:
-    if not HF_TOKEN:
-        print("Error: HF_TOKEN (or API_KEY) environment variable must be set.")
+    if not API_KEY:
+        print("Error: API_KEY environment variable must be set.")
         return
 
-    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     env = await ExecEnv.from_docker_image(LOCAL_IMAGE_NAME)
     
     goal = "Mark email 'e1' as URGENT and then FINISH."
@@ -130,7 +132,10 @@ async def main() -> None:
                 break
     finally:
         await env.close()
-        log_end(success, steps_taken, sum(rewards), rewards)
+        final_score = sum(rewards) / MAX_TOTAL_REWARD if MAX_TOTAL_REWARD > 0 else 0.0
+        final_score = min(max(final_score, 0.0), 1.0)
+        success = final_score >= SUCCESS_SCORE_THRESHOLD
+        log_end(success, steps_taken, final_score, rewards)
 
 if __name__ == "__main__":
     asyncio.run(main())
