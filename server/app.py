@@ -3,12 +3,16 @@ import sys
 import os
 from fastapi import FastAPI, HTTPException
 from typing import Optional
+from dotenv import load_dotenv
 
 # Add the parent directory to sys.path so we can import env and models
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from exec_env import ExecEnv
 from models import ExecAction
+
+# Load local environment variables from .env file
+load_dotenv()
 
 app = FastAPI(title="ExecEnv Server")
 env_instance = ExecEnv()

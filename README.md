@@ -92,23 +92,30 @@ ExecEnv evaluates agents on **Human-AI Alignment** through three critical signal
 - **OpenAI Client**: v1.0.0+
 - **Resources**: 2 vCPU, 8GB RAM (Optimized for HF Spaces)
 
-### 2. Quick Start
-```bash
-# Install high-fidelity dependencies
-pip install -r requirements.txt
+### 2. Mandatory Configuration
+The environment and baseline scripts require the following variables to be set in a `.env` file located in the project root:
 
-# Configure Environment
-cat <<EOF > .env
-HF_TOKEN="your_token"
+```env
+# 🛰 MANDATORY CONFIGURATION
+HF_TOKEN="your_huggingface_token"
 API_BASE_URL="https://router.huggingface.co/v1"
 MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
-EOF
+```
 
-# Run Baseline Inference (Mandatory)
+> [!IMPORTANT]
+> **Environment Loading**: We use `python-dotenv` to automatically load these variables. Ensure they are present before running `inference.py` or starting the `server`.
+
+### 3. Quick Start
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run Baseline Inference
 python inference.py
 ```
 
-### 3. Log Format Compliance
+
+### 4. Log Format Compliance
 The `inference.py` script emits strictly formatted STDOUT logs for the validator:
 - `[START] task=... env=... model=...`
 - `[STEP] step=... action=... reward=... done=... error=...`
