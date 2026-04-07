@@ -70,8 +70,10 @@ sequenceDiagram
    ```
 2. **Launch Baseline Inference**:
    ```bash
-   set HF_TOKEN=your_token && python inference.py
+   # For local testing, ensure your .env file is configured
+   python inference.py
    ```
+   *Note: In the competition/production environment, `API_BASE_URL` and `API_KEY` are injected automatically.*
 3. **Verify Environment Logic**:
    ```bash
    python live_test.py

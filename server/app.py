@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 # Add the parent directory to sys.path so we can import env and models
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from env import ExecEnv
+from exec_env import ExecEnv
 from models import ExecAction
 
 app = FastAPI(title="ExecEnv Server")

@@ -5,10 +5,14 @@ import sys
 import re
 from typing import List, Optional
 from openai import OpenAI
+from dotenv import load_dotenv
 
-# Ensure the current directory is in sys.path for local imports
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Load local environment variables if present
+load_dotenv()
+
+# Import local modules
 from exec_env import ActionType, ExecAction, ExecEnv, ExecObservation, ExecResult
+from tasks import get_tasks, Task
 
 # Strictly use the API_BASE_URL and API_KEY environment variables as requested by the validator
 # This ensures compliance with the mandatory LiteLLM proxy requirement.
@@ -90,7 +94,10 @@ async def main() -> None:
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     env = await ExecEnv.from_docker_image(LOCAL_IMAGE_NAME)
     
-    goal = "Mark email 'e1' as URGENT and then FINISH."
+    # Load the requested task or default to the first one
+    tasks = get_tasks()
+    selected_task = next((t for t in tasks if t.__class__.__name__.lower().startswith(TASK_NAME.lower())), tasks[0])
+    goal = selected_task.get_goal()
     
     log_start(task=TASK_NAME, env=BENCHMARK, model=MODEL_NAME)
     rewards = []
@@ -126,19 +133,19 @@ async def main() -> None:
             action = parse_action(action_str)
             result = await env.step(action)
             
-            # Simple reward logic for baseline tracker
-            reward = 1.0 if (step == 1 and action.action_type == ActionType.LABEL_EMAIL) or (step == 2 and action.action_type == ActionType.FINISH) else 0.0
+            # Use actual task evaluation logic for real-time progress if needed, 
+            # but final score is what matters most for the validator.
+            reward = selected_task.evaluate(env)
             rewards.append(reward)
             
             log_step(step, action_str, reward, result.done, None)
             steps_taken = step
             
             if result.done:
-                success = True
                 break
     finally:
         await env.close()
-        final_score = sum(rewards) / MAX_TOTAL_REWARD if MAX_TOTAL_REWARD > 0 else 0.0
+        final_score = selected_task.evaluate(env) # Final assessment from state
         final_score = min(max(final_score, 0.0), 1.0)
         success = final_score >= SUCCESS_SCORE_THRESHOLD
         log_end(success, steps_taken, final_score, rewards)
