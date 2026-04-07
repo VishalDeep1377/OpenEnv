@@ -1,3 +1,12 @@
+---
+title: ExecEnv Assistant
+emoji: 🤖
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+---
+
 <div align="center">
   <img width="600" alt="ExecEnv Banner" src="https://github.com/user-attachments/assets/8c1cae2d-6877-4592-8a74-902cca17dfec" />
   
@@ -114,8 +123,38 @@ pip install -r requirements.txt
 python inference.py
 ```
 
+### 4. Deployment Configuration (Dockerfile)
+```dockerfile
+# Dockerfile specifically optimized for Hugging Face Spaces (Docker SDK)
+# Using Python 3.11-slim for a balanced and lightweight environment
 
-### 4. Log Format Compliance
+FROM python:3.11-slim
+
+# Set up a new user with UID 1000 for permission safety (HF Recommendation)
+RUN useradd -m -u 1000 user
+USER user
+ENV PATH="/home/user/.local/bin:$PATH"
+
+WORKDIR /app
+
+# Install dependencies first for better caching
+COPY --chown=user ./requirements.txt requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
+
+# Copy the rest of the application files
+COPY --chown=user . /app
+
+# Final Installation (registers 'server' and ensures local imports work)
+RUN pip install --user -e .
+
+# Expose the mandatory Hugging Face app_port
+EXPOSE 7860
+
+# Start the application using a root-level app entry point
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
+```
+
+### 5. Log Format Compliance
 The `inference.py` script emits strictly formatted STDOUT logs for the validator:
 - `[START] task=... env=... model=...`
 - `[STEP] step=... action=... reward=... done=... error=...`
