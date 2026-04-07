@@ -61,6 +61,14 @@ class ExecEnv:
         self._done = False
         self.reset_state()
 
+    @property
+    def emails(self) -> List[Email]:
+        return self._emails
+
+    @property
+    def calendar(self) -> List[CalendarEvent]:
+        return self._calendar
+
     @classmethod
     async def from_docker_image(cls, image_name: str):
         # In a real OpenEnv, this would connect to a remote container.
