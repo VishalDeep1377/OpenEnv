@@ -1,19 +1,8 @@
----
-title: "ExecEnv Assistant"
-emoji: "🤖"
-colorFrom: "blue"
-colorTo: "indigo"
-sdk: "docker"
-python_version: "3.11"
-app_port: 7860
-pinned: false
----
-
 <div align="center">
-  <img width="500" alt="openenv" src="https://github.com/user-attachments/assets/8c1cae2d-6877-4592-8a74-902cca17dfec" />
+  <img width="600" alt="ExecEnv Banner" src="https://github.com/user-attachments/assets/8c1cae2d-6877-4592-8a74-902cca17dfec" />
   
-  <h1>🤖 ExecEnv: The AI Executive Assistant</h1>
-  <p><b>State-of-the-Art OpenEnv for Evaluating Autonomous Agent Intelligence</b></p>
+  # 🤖 ExecEnv: The AI Executive Assistant
+  **High-Fidelity OpenEnv Benchmark for Autonomous Agent Reliability & Social Intelligence**
 
   [![OpenEnv-1.0.0](https://img.shields.io/badge/OpenEnv-1.0.0-green?style=for-the-badge&logo=huggingface)](https://github.com/openenv)
   [![Build-Passing](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)](https://huggingface.co/spaces/vishaldeep1022/exec-env-assistant)
@@ -23,70 +12,107 @@ pinned: false
 
 ---
 
-## 🌐 The Mission
-**ExecEnv** is a production-grade benchmark designed to bridge the gap between "simple chat agents" and "true autonomous assistants." By simulating a professional's **Inbox** and **Calendar**, we force agents to perform multi-step logical reasoning, maintain state over long horizons, and resolve real-world priority conflicts.
+## 🌐 Vision & Motivation
+**ExecEnv** is a next-generation evaluation environment designed for the **Meta & Hugging Face OpenEnv Hackathon**. It bridges the gap between "pure productivity" and "human alignment." By simulating a professional's **Inbox** and **Calendar**, we force agents to navigate complex priority conflicts while maintaining a high **Social Intelligence** profile.
+
+> [!TIP]
+> **Novelty Signal**: ExecEnv is the first OpenEnv submission to introduce a **Dynamic Trust Meter**, evaluating not just *if* a task was done, but the *professionalism* of the execution.
 
 ---
 
-## 🛠 Interaction Lifecycle
-How the **ExecEnv** ecosystem communicates across the stack:
+## 🏗 Project Architecture & Structure
 
 ```mermaid
-sequenceDiagram
-    participant Agent as 🧠 AI Agent
-    participant Env as 💼 ExecEnv Server
-    participant DB as 📁 Mock Database
-    participant Grader as ⚖️ Programmatic Grader
-
-    Agent->>Env: GET /reset
-    Env->>DB: Initialize State (5 Emails, 1 Event)
-    DB-->>Env: Initial State
-    Env-->>Agent: Observation (Inbox & Calendar)
-    loop Until Task Complete
-        Agent->>Env: POST /step {Action: LABEL_EMAIL}
-        Env->>DB: Update State
-        DB-->>Env: New State Snapshot
-        Env-->>Agent: Observation + Reward Signal
+graph TD
+    A[🧠 AI Agent] <--> B[💼 ExecEnv Server]
+    B <--> C[⚖️ Task Graders]
+    B <--> D[📁 Virtual Database]
+    
+    subgraph Core Files
+        E[exec_env.py - Environment Logic]
+        F[models.py - Typed Schemas]
+        G[tasks.py - Grader Suite]
     end
-    Grader->>DB: Read Final State
-    Grader-->>Agent: Final Score (0.0 - 1.0)
+    
+    subgraph Deployment
+        H[Dockerfile - Containerization]
+        I[openenv.yaml - Registry Metadata]
+    end
+    
+    B --> E
+    B --> F
+    C --> G
+```
+
+### 📁 Directory Blueprint
+```text
+OpenEnv/
+├── server/             # FastAPI Entrypoints
+│   └── app.py          # Mandatory Spec Endpoints (/reset, /step, /state)
+├── .env                # Credential Management
+├── Dockerfile          # HF Space Deployment Config
+├── exec_env.py         # The "Brain": State & Trust Management
+├── inference.py        # MANDATORY: Baseline Evaluation Script
+├── live_test.py        # Cloud Synchronization Verifier
+├── models.py           # Pydantic V2 Contract Definitions
+├── openenv.yaml        # Official OpenEnv Registry Metadata
+├── pyproject.toml      # Package & Tooling Metadata
+├── README.md           # This Document
+├── requirements.txt    # Dependency Manifest
+└── tasks.py            # High-Fidelity Grader Logic
 ```
 
 ---
 
-## 📋 Standardized Task Suite
+## 📋 Standardized Benchmark Suite
 
-| Difficulty | Task Name | Core Challenge | Scoring Logic |
+| Difficulty | Task ID | Description | Reward Weight |
 | :--- | :--- | :--- | :--- |
-| 🟢 **EASY** | **Morning Triage** | Pattern Recognition | +0.1 per correct label (URGENT/SPAM) |
-| 🟡 **MEDIUM** | **Strategic Scheduling** | Temporal Reasoning | 1.0 for precise 30-min window extraction |
-| 🔴 **HARD** | **Conflict Resolution** | Logical Prioritization | 1.0 for multi-step move + notify workflow |
+| 🟢 **EASY** | `triage` | Morning Triage: Multi-label classification. | 1.0 (Fixed Reward) |
+| 🟡 **MEDIUM** | `schedule` | Strategic Scheduling: Extraction & Cleanup. | 0.8 (Step) + 0.2 (Bonus) |
+| 🔴 **HARD** | `reschedule` | Conflict Resolution: Multi-step Reasoning. | 0.5 (Move) + 0.5 (Create) |
+
+> [!IMPORTANT]
+> **Scoring Normalization**: All final scores are in the **[0.0, 1.0] range** and are multiplied by the agent's `trust_score`, penalizing reckless behaviors like hallucinating IDs.
 
 ---
 
-## 💻 Tech Stack & Deployment
+## 🌟 The Trust & Alignment Mechanic
+ExecEnv evaluates agents on **Human-AI Alignment** through three critical signals:
+1.  **Trust Score (0.0-1.0)**: Numerical metric tracking reliability. Reaching `0.0` triggers a `CRITICAL` state.
+2.  **Trust Level (STABLE → WARNING → CRITICAL)**: Categorical feedback injected into agent observations.
+3.  **Proactivity Bonus**: Rewards for cleaning up the workspace (e.g., archiving emails after action).
 
-### ⚡ Technical Specifications
-- **Model Engine**: OpenAI Client Interface (Qwen / GPT / Claude ready)
-- **API Framework**: FastAPI + Uvicorn (Asynchronous I/O)
-- **Data Integrity**: Pydantic V2 (Strict Schema Enforcement)
-- **Runtime**: Python 3.11-slim (Optimized Container Footprint)
+---
 
-### 🚀 Quick Start
-1. **Initialize Project**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. **Launch Baseline Inference**:
-   ```bash
-   # For local testing, ensure your .env file is configured
-   python inference.py
-   ```
-   *Note: In the competition/production environment, `API_BASE_URL` and `API_KEY` are injected automatically.*
-3. **Verify Environment Logic**:
-   ```bash
-   python live_test.py
-   ```
+## 🛰 Technical Specification & Usage
+
+### 1. Requirements
+- **Python**: 3.11+
+- **OpenAI Client**: v1.0.0+
+- **Resources**: 2 vCPU, 8GB RAM (Optimized for HF Spaces)
+
+### 2. Quick Start
+```bash
+# Install high-fidelity dependencies
+pip install -r requirements.txt
+
+# Configure Environment
+cat <<EOF > .env
+HF_TOKEN="your_token"
+API_BASE_URL="https://router.huggingface.co/v1"
+MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
+EOF
+
+# Run Baseline Inference (Mandatory)
+python inference.py
+```
+
+### 3. Log Format Compliance
+The `inference.py` script emits strictly formatted STDOUT logs for the validator:
+- `[START] task=... env=... model=...`
+- `[STEP] step=... action=... reward=... done=... error=...`
+- `[END] success=... steps=... score=... rewards=...`
 
 ---
 

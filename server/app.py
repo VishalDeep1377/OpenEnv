@@ -19,11 +19,17 @@ def read_root():
 
 @app.post("/reset")
 async def reset(task_id: Optional[str] = None):
-    return {"observation": await env_instance.reset(task_id=task_id)}
+    return await env_instance.reset(task_id=task_id)
 
 @app.post("/step")
 async def step(action: ExecAction):
     return await env_instance.step(action)
+
+@app.get("/state")
+async def state():
+    """Mandatory endpoint returning the full internal environment state."""
+    return env_instance.state()
+
 
 @app.get("/health")
 def health_check():

@@ -75,8 +75,6 @@ def parse_action(response: str) -> ExecAction:
     except ValueError:
         return ExecAction(action_type=ActionType.FINISH)
     
-    return ExecAction(action_type=action_type, **params)
-
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
@@ -88,6 +86,54 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
     print(f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
 
+async def run_task(task_id: str, client: OpenAI, env: ExecEnv):
+
+    tasks = get_tasks()
+    selected_task = next((t for t in tasks if t.__class__.__name__.lower().startswith(task_id.lower())), tasks[0])
+    goal = selected_task.get_goal()
+    
+    log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
+    rewards = []
+    steps_taken = 0
+    
+    result = await env.reset(task_id=task_id)
+    for step in range(1, MAX_STEPS + 1):
+        if result.done: break
+        
+        obs_text = f"Observation: {result.observation.model_dump_json()}\nGoal: {goal}"
+        
+        try:
+            response = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": obs_text}
+                ],
+                temperature=TEMPERATURE,
+                max_tokens=MAX_TOKENS
+            )
+            action_str = response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"LLM API Error: {e}", file=sys.stderr)
+            action_str = "ACTION: FINISH"
+
+        action = parse_action(action_str)
+        result = await env.step(action)
+        
+        # Log the step with precisely formatted fields
+        log_step(step, action_str, result.reward, result.done, result.observation.last_action_error)
+        rewards.append(result.reward)
+        steps_taken = step
+        
+        if result.done: break
+
+    # Final summary for this task
+    final_score = selected_task.evaluate(env)
+    final_score = min(max(final_score, 0.0), 1.0)
+    success = final_score >= SUCCESS_SCORE_THRESHOLD
+    log_end(success, steps_taken, final_score, rewards)
+    return final_score
+
 async def main() -> None:
     if not HF_TOKEN:
         print("Error: HF_TOKEN environment variable must be set.")
@@ -96,61 +142,25 @@ async def main() -> None:
     client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
     env = await ExecEnv.from_docker_image(LOCAL_IMAGE_NAME)
     
-    # Load the requested task or default to the first one
-    tasks = get_tasks()
-    selected_task = next((t for t in tasks if t.__class__.__name__.lower().startswith(TASK_NAME.lower())), tasks[0])
-    goal = selected_task.get_goal()
+    # Run all 3 mandatory tasks for the benchmark
+    all_tasks = ["triage", "schedule", "reschedule"]
+    scores = {}
     
-    log_start(task=TASK_NAME, env=BENCHMARK, model=MODEL_NAME)
-    rewards = []
-    steps_taken = 0
-    success = False
+    for t_id in all_tasks:
+        try:
+            score = await run_task(t_id, client, env)
+            scores[t_id] = score
+        except Exception as e:
+            print(f"Task {t_id} failed with error: {e}", file=sys.stderr)
     
-    try:
-        result = await env.reset()
-        for step in range(1, MAX_STEPS + 1):
-            if result.done: break
-            
-            # Construct the prompt with current observation
-            obs_text = f"Observation: {result.observation.model_dump_json()}\nGoal: {goal}"
-            
-            try:
-                response = client.chat.completions.create(
-                    model=MODEL_NAME,
-                    messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": obs_text}
-                    ],
-                    temperature=TEMPERATURE,
-                    max_tokens=MAX_TOKENS
-                )
-                action_str = response.choices[0].message.content.strip()
-            except Exception as e:
-                # Redirect error logs to stderr so stdout remains 100% compliant with log formats
-                print(f"LLM API Error: {e}", file=sys.stderr)
-                # Fallback to a safe finish if API fails
-                action_str = "ACTION: FINISH"
-
-            # Parse and execute action
-            action = parse_action(action_str)
-            result = await env.step(action)
-            
-            # Use actual task evaluation logic for real-time progress if needed, 
-            # but final score is what matters most for the validator.
-            reward = selected_task.evaluate(env)
-            rewards.append(reward)
-            
-            log_step(step, action_str, reward, result.done, None)
-            steps_taken = step
-            
-            if result.done:
-                break
-    finally:
-        await env.close()
-        final_score = selected_task.evaluate(env) # Final assessment from state
-        final_score = min(max(final_score, 0.0), 1.0)
-        success = final_score >= SUCCESS_SCORE_THRESHOLD
-        log_end(success, steps_taken, final_score, rewards)
+    await env.close()
+    
+    # Holistic breakdown for developer visibility (not required for [END] signal but good for verification)
+    print("\n--- BENCHMARK SUMMARY ---")
+    for tid, s in scores.items():
+        print(f"Task: {tid:12} Score: {s:.2f}")
+    print("-------------------------\n")
 
 if __name__ == "__main__":
     asyncio.run(main())
+

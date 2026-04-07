@@ -12,20 +12,25 @@ tags:
   - "openenv"
   - "agent-eval"
   - "assistant"
+  - "productivity"
 
 # Benchmark Task Suite
 tasks:
   - id: "triage"
     difficulty: "easy"
+    description: "Morning email triage: label and archive."
     grader: "tasks:EasyTriageTask"
   - id: "schedule"
     difficulty: "medium"
+    description: "Extract meeting details and upsert into calendar."
     grader: "tasks:MediumSchedulingTask"
   - id: "reschedule"
     difficulty: "hard"
+    description: "Resolve calendar conflicts and update priorities."
     grader: "tasks:HardConflictTask"
 
 # Space Configuration
 action_space: "ExecAction (Pydantic)"
 observation_space: "ExecObservation (Pydantic)"
 reward_range: [0.0, 1.0]
+

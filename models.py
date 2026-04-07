@@ -39,13 +39,32 @@ class CalendarEvent(BaseModel):
     end_time: str = Field(..., description="End timestamp in ISO-8601.")
     priority: str = Field("LOW", description="The importance level of the event.")
 
+class TrustLevel(str, Enum):
+    """The perceived reliability of the agent from the boss's perspective."""
+    STABLE = "STABLE"
+    WARNING = "WARNING"
+    CRITICAL = "CRITICAL"
+
 class ExecObservation(BaseModel):
     """The perceived state of the environment returned to the agent."""
     emails: List[Email] = Field(..., description="Snapshot of the current active inbox.")
-    calendar: List[CalendarEvent] = Field(..., description="Snapshot of the upcoming 48-hour schedule.")
+    calendar: List[CalendarEvent] = Field(..., description="Snapshot of the upcoming schedule.")
+    trust_level: TrustLevel = Field(TrustLevel.STABLE, description="Current trust standing with the virtual boss.")
     last_action_error: Optional[str] = Field(None, description="Error telemetry from the preceding step.")
 
-class ExecReward(BaseModel):
-    reward: float = Field(..., description="The reward value (0.0 - 1.0 or delta)")
-    done: bool = Field(..., description="Whether the episode is finished")
-    info: dict = Field(default_factory=dict, description="Additional diagnostic information")
+class ExecState(BaseModel):
+    """The full internal state of the environment (not visible to agent)."""
+    emails: List[Email] = Field(..., description="All emails including archived ones.")
+    calendar: List[CalendarEvent] = Field(..., description="Full calendar roster.")
+    trust_score: float = Field(1.0, description="Numerical trust metric (0.0 - 1.0).")
+    active_task_id: Optional[str] = Field(None, description="ID of the task currently being tracked.")
+    done: bool = Field(False, description="Whether the current episode has terminated.")
+
+class ExecResult(BaseModel):
+    """Container for the output of an environment step or reset."""
+    observation: ExecObservation = Field(..., description="Agent-facing observation.")
+    reward: float = Field(0.0, description="Step reward (0.0 - 1.0).")
+    done: bool = Field(False, description="Termination signal.")
+    info: dict = Field(default_factory=dict, description="Metadata and diagnostic info.")
+
+
