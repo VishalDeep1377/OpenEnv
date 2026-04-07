@@ -16,9 +16,11 @@ from tasks import get_tasks, Task
 
 # Strictly use the API_BASE_URL and API_KEY environment variables as requested by the validator
 # This ensures compliance with the mandatory LiteLLM proxy requirement.
-API_BASE_URL = os.environ["API_BASE_URL"]
-API_KEY = os.environ["API_KEY"]
+# Aligning exactly with the checklist snippet:
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+HF_TOKEN = os.getenv("HF_TOKEN") # Strictly no hardcoded default
+
 
 # Optional - for from_docker_image()
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
@@ -87,11 +89,11 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
     print(f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
 
 async def main() -> None:
-    if not API_KEY:
-        print("Error: API_KEY environment variable must be set.")
+    if not HF_TOKEN:
+        print("Error: HF_TOKEN environment variable must be set.")
         return
 
-    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
     env = await ExecEnv.from_docker_image(LOCAL_IMAGE_NAME)
     
     # Load the requested task or default to the first one
