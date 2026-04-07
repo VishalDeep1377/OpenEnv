@@ -2,6 +2,7 @@ import uvicorn
 import sys
 import os
 from fastapi import FastAPI, HTTPException
+from typing import Optional
 
 # Add the parent directory to sys.path so we can import env and models
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,8 +18,8 @@ def read_root():
     return {"message": "ExecEnv Server is running", "mode": "multi-mode deployment"}
 
 @app.post("/reset")
-async def reset():
-    return {"observation": await env_instance.reset()}
+async def reset(task_id: Optional[str] = None):
+    return {"observation": await env_instance.reset(task_id=task_id)}
 
 @app.post("/step")
 async def step(action: ExecAction):

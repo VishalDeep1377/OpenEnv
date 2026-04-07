@@ -17,10 +17,13 @@ tags:
 tasks:
   - id: "triage"
     difficulty: "easy"
+    grader: "tasks:EasyTriageTask"
   - id: "schedule"
     difficulty: "medium"
+    grader: "tasks:MediumSchedulingTask"
   - id: "reschedule"
     difficulty: "hard"
+    grader: "tasks:HardConflictTask"
 
 # Space Configuration
 action_space: "ExecAction (Pydantic)"

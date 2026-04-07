@@ -59,6 +59,7 @@ class ExecEnv:
         self._calendar: List[CalendarEvent] = []
         self._last_error: Optional[str] = None
         self._done = False
+        self.active_task = None
         self.reset_state()
 
     @property
@@ -90,8 +91,23 @@ class ExecEnv:
         self._last_error = None
         self._done = False
 
-    async def reset(self) -> ExecResult:
+    async def reset(self, task_id: Optional[str] = None) -> ExecResult:
+        from tasks import get_tasks
         self.reset_state()
+        
+        # Select active task by ID or class name
+        tasks = get_tasks()
+        task_id = (task_id or "triage").lower()
+        
+        if "triage" in task_id:
+            self.active_task = tasks[0]
+        elif "schedule" in task_id:
+            self.active_task = tasks[1]
+        elif "reschedule" in task_id:
+            self.active_task = tasks[2]
+        else:
+            self.active_task = tasks[0]
+            
         return ExecResult(observation=self._get_obs(), reward=0.0, done=False)
 
     def _get_obs(self) -> ExecObservation:
@@ -124,6 +140,9 @@ class ExecEnv:
                 self._calendar.append(new_ev)
         elif action.action_type == ActionType.FINISH:
             self._done = True
+
+        if self.active_task:
+            reward = self.active_task.evaluate(self)
 
         return ExecResult(observation=self._get_obs(), reward=reward, done=self._done)
 
