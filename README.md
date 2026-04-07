@@ -1,4 +1,13 @@
-
+---
+title: "ExecEnv Assistant"
+emoji: "🤖"
+colorFrom: "blue"
+colorTo: "indigo"
+sdk: "docker"
+python_version: "3.11"
+app_port: 7860
+pinned: false
+---
 
 <div align="center">
   <img width="500" alt="openenv" src="https://github.com/user-attachments/assets/8c1cae2d-6877-4592-8a74-902cca17dfec" />
