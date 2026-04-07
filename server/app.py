@@ -18,12 +18,11 @@ def read_root():
 
 @app.post("/reset")
 async def reset():
-    return {"observation": env_instance.reset()}
+    return {"observation": await env_instance.reset()}
 
 @app.post("/step")
 async def step(action: ExecAction):
-    obs, reward, done, info = env_instance.step(action)
-    return {"observation": obs, "reward": reward, "done": done, "info": info}
+    return await env_instance.step(action)
 
 @app.get("/health")
 def health_check():
