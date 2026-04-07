@@ -165,6 +165,6 @@ The `inference.py` script emits strictly formatted STDOUT logs for the validator
 ---
 
 <div align="center">
-  <p><i>Developed with ❤️ for the Meta & Hugging Face OpenEnv Hackathon 2024.</i></p>
+  <p><i>Developed with ❤️ for the Meta & Hugging Face OpenEnv Hackathon 2026.</i></p>
   <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.svg" width="200">
 </div>
