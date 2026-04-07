@@ -1,14 +1,4 @@
 
----
-title: ExecEnv
-emoji: 💼
-colorFrom: indigo
-colorTo: blue
-sdk: docker
-pinned: false
-tags:
-  - openenv
----
 
 <div align="center">
   <img width="500" alt="openenv" src="https://github.com/user-attachments/assets/8c1cae2d-6877-4592-8a74-902cca17dfec" />

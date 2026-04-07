@@ -6,7 +6,7 @@ from openai import OpenAI
 # --- Configuration ---
 # This is your live Hugging Face Space URL
 SPACE_URL = "https://vishaldeep1022-exec-env-assistant.hf.space" 
-API_KEY = os.getenv("HF_TOKEN")
+API_KEY = os.getenv("HF_TOKEN") or "HF_Token"
 MODEL = "Qwen/Qwen2.5-72B-Instruct"
 
 # Initialize the OpenAI client pointing to Hugging Face's inference server

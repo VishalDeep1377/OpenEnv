@@ -1,18 +1,20 @@
 import asyncio
 import os
 import textwrap
+import re
 from typing import List, Optional
 from openai import OpenAI
 from exec_env import ExecAction, ExecEnv, ActionType
 
 IMAGE_NAME = os.getenv("IMAGE_NAME")
-API_KEY = os.getenv("HF_TOKEN")
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+# Correctly use API_KEY and API_BASE_URL as required by the hackathon validator
+API_KEY = os.environ.get("API_KEY") 
+API_BASE_URL = os.environ.get("API_BASE_URL")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 TASK_NAME = os.getenv("EXEC_ENV_TASK", "triage")
 BENCHMARK = "exec_env"
-MAX_STEPS = 5
-TEMPERATURE = 0.1
+MAX_STEPS = 10
+TEMPERATURE = 0.0
 MAX_TOKENS = 512
 
 SYSTEM_PROMPT = textwrap.dedent(
@@ -23,16 +25,41 @@ SYSTEM_PROMPT = textwrap.dedent(
     - UPSERT_EVENT: params {event_id (optional), title, start_time, end_time, priority}
     - FINISH: no params
     
-    Current Goal: {goal}
-    
     Instructions:
-    1. Look at the provided emails and calendar.
+    1. Look at the provided emails and calendar in the observation.
     2. Perform one action at a time.
     3. When the goal is complete, use the FINISH action.
-    Reply with exactly one JSON-like action line, for example:
+    Reply with exactly one action line in the following format:
+    ACTION: ACTION_TYPE key1='val1' key2='val2'
+    
+    Examples:
     ACTION: LABEL_EMAIL email_id='e1' label='URGENT'
+    ACTION: UPSERT_EVENT title='Team Lunch' start_time='2024-04-10T12:00:00' priority='HIGH'
+    ACTION: FINISH
     """
 ).strip()
+
+def parse_action(response: str) -> ExecAction:
+    """Parses the LLM response string into an ExecAction object."""
+    match = re.search(r"ACTION:\s*(\w+)(.*)", response)
+    if not match:
+        return ExecAction(action_type=ActionType.FINISH)
+    
+    action_type_str = match.group(1)
+    params_str = match.group(2)
+    
+    # Extract key-value pairs like key='value' or key="value"
+    params = {}
+    param_matches = re.finditer(r"(\w+)=['\"](.*?)['\"]", params_str)
+    for m in param_matches:
+        params[m.group(1)] = m.group(2)
+    
+    try:
+        action_type = ActionType(action_type_str)
+    except ValueError:
+        return ExecAction(action_type=ActionType.FINISH)
+    
+    return ExecAction(action_type=action_type, **params)
 
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
@@ -46,10 +73,13 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
     print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}", flush=True)
 
 async def main() -> None:
+    if not API_KEY or not API_BASE_URL:
+        print("Error: API_KEY and API_BASE_URL environment variables must be set.")
+        return
+
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     env = await ExecEnv.from_docker_image(IMAGE_NAME)
     
-    # Simple goal for baseline demo
     goal = "Mark email 'e1' as URGENT and then FINISH."
     
     log_start(task=TASK_NAME, env=BENCHMARK, model=MODEL_NAME)
@@ -62,23 +92,33 @@ async def main() -> None:
         for step in range(1, MAX_STEPS + 1):
             if result.done: break
             
-            # Simple heuristic for baseline if API_KEY is missing, or actual LLM call
-            if not API_KEY:
-                if step == 1: action_str = "LABEL_EMAIL email_id='e1' label='URGENT'"
-                else: action_str = "FINISH"
-            else:
-                # Actual LLM logic would go here
-                action_str = "LABEL_EMAIL email_id='e1' label='URGENT'" if step == 1 else "FINISH"
+            # Construct the prompt with current observation
+            obs_text = f"Observation: {result.observation.model_dump_json()}\nGoal: {goal}"
             
-            # Parse action (simplified for baseline)
-            if "LABEL_EMAIL" in action_str:
-                action = ExecAction(action_type=ActionType.LABEL_EMAIL, email_id="e1", label="URGENT")
-            else:
-                action = ExecAction(action_type=ActionType.FINISH)
-            
+            try:
+                response = client.chat.completions.create(
+                    model=MODEL_NAME,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": obs_text}
+                    ],
+                    temperature=TEMPERATURE,
+                    max_tokens=MAX_TOKENS
+                )
+                action_str = response.choices[0].message.content.strip()
+            except Exception as e:
+                print(f"LLM API Error: {e}")
+                # Fallback to a safe finish if API fails consecutively
+                action_str = "ACTION: FINISH"
+
+            # Parse and execute action
+            action = parse_action(action_str)
             result = await env.step(action)
-            reward = 0.1 if step == 1 else 0.5
+            
+            # Simple reward logic for baseline tracker
+            reward = 1.0 if (step == 1 and action.action_type == ActionType.LABEL_EMAIL) or (step == 2 and action.action_type == ActionType.FINISH) else 0.0
             rewards.append(reward)
+            
             log_step(step, action_str, reward, result.done, None)
             steps_taken = step
             
