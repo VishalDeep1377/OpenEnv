@@ -5,10 +5,14 @@ from openai import OpenAI
 
 # --- Configuration ---
 # Use environment variables strictly as required by the hackathon proxy validator
-API_BASE_URL = os.environ["API_BASE_URL"]
-API_KEY = os.environ["API_KEY"]
+# Robustly fetch environment variables with multiple naming conventions
+API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
+API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN") or os.getenv("HF_Token")
 MODEL = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 SPACE_URL = os.getenv("SPACE_URL", "https://vishaldeep1022-exec-env-assistant.hf.space")
+
+if not API_KEY:
+    raise KeyError("MISSING API_KEY: Please set API_KEY or HF_TOKEN in your environment/secrets.")
 
 # Initialize the OpenAI client pointing to the required proxy
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)

@@ -7,9 +7,14 @@ from openai import OpenAI
 from exec_env import ExecAction, ExecEnv, ActionType
 
 # Strictly use the API_BASE_URL and API_KEY environment variables provided by the validator
-API_BASE_URL = os.environ["API_BASE_URL"]
-API_KEY = os.environ["API_KEY"]
+# Robustly fetch environment variables with multiple naming conventions
+API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
+API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN") or os.getenv("HF_Token")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+
+if not API_KEY:
+    # Fail fast if no key is found, but provide helpful debug info
+    raise KeyError("MISSING API_KEY: Please set API_KEY or HF_TOKEN in your environment/secrets.")
 
 # Optional - for from_docker_image()
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
