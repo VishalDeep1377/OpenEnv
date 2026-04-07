@@ -1,20 +1,20 @@
 import httpx
 import asyncio
 import os
+import sys
 from openai import OpenAI
 
+# Ensure the current directory is in sys.path for local imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 # --- Configuration ---
-# Use environment variables strictly as required by the hackathon proxy validator
-# Robustly fetch environment variables with multiple naming conventions
-API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
-API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN") or os.getenv("HF_Token")
+# Use the API_BASE_URL and API_KEY environment variables as requested by the validator
+API_BASE_URL = os.environ["API_BASE_URL"]
+API_KEY = os.environ["API_KEY"]
 MODEL = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 SPACE_URL = os.getenv("SPACE_URL", "https://vishaldeep1022-exec-env-assistant.hf.space")
 
-if not API_KEY:
-    raise KeyError("MISSING API_KEY: Please set API_KEY or HF_TOKEN in your environment/secrets.")
-
-# Initialize the OpenAI client pointing to the required proxy
+# Initialize the OpenAI client pointing to the compulsory LiteLLM proxy
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
 async def run_live_demo():

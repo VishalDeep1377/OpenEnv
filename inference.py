@@ -1,20 +1,20 @@
 import asyncio
 import os
 import textwrap
+import sys
 import re
 from typing import List, Optional
 from openai import OpenAI
+
+# Ensure the current directory is in sys.path for local imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from exec_env import ExecAction, ExecEnv, ActionType
 
-# Strictly use the API_BASE_URL and API_KEY environment variables provided by the validator
-# Robustly fetch environment variables with multiple naming conventions
-API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
-API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN") or os.getenv("HF_Token")
+# Strictly use the API_BASE_URL and API_KEY environment variables as requested by the validator
+# This ensures compliance with the mandatory LiteLLM proxy requirement.
+API_BASE_URL = os.environ["API_BASE_URL"]
+API_KEY = os.environ["API_KEY"]
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-
-if not API_KEY:
-    # Fail fast if no key is found, but provide helpful debug info
-    raise KeyError("MISSING API_KEY: Please set API_KEY or HF_TOKEN in your environment/secrets.")
 
 # Optional - for from_docker_image()
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
@@ -117,8 +117,9 @@ async def main() -> None:
                 )
                 action_str = response.choices[0].message.content.strip()
             except Exception as e:
-                print(f"LLM API Error: {e}")
-                # Fallback to a safe finish if API fails consecutively
+                # Redirect error logs to stderr so stdout remains 100% compliant with log formats
+                print(f"LLM API Error: {e}", file=sys.stderr)
+                # Fallback to a safe finish if API fails
                 action_str = "ACTION: FINISH"
 
             # Parse and execute action
