@@ -8,7 +8,7 @@ from openai import OpenAI
 
 # Ensure the current directory is in sys.path for local imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from exec_env import ExecAction, ExecEnv, ActionType
+from exec_env import ActionType, ExecAction, ExecEnv, ExecObservation, ExecResult
 
 # Strictly use the API_BASE_URL and API_KEY environment variables as requested by the validator
 # This ensures compliance with the mandatory LiteLLM proxy requirement.
