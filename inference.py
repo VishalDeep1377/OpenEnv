@@ -6,11 +6,14 @@ from typing import List, Optional
 from openai import OpenAI
 from exec_env import ExecAction, ExecEnv, ActionType
 
-IMAGE_NAME = os.getenv("IMAGE_NAME")
-# Correctly use API_KEY and API_BASE_URL as required by the hackathon validator
-API_KEY = os.environ.get("API_KEY") 
-API_BASE_URL = os.environ.get("API_BASE_URL")
+# Correctly use environmental variables as required by the hackathon checklist
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+HF_TOKEN = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
+
+# Optional - for from_docker_image()
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
+
 TASK_NAME = os.getenv("EXEC_ENV_TASK", "triage")
 BENCHMARK = "exec_env"
 MAX_STEPS = 10
@@ -73,12 +76,12 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
     print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}", flush=True)
 
 async def main() -> None:
-    if not API_KEY or not API_BASE_URL:
-        print("Error: API_KEY and API_BASE_URL environment variables must be set.")
+    if not HF_TOKEN:
+        print("Error: HF_TOKEN (or API_KEY) environment variable must be set.")
         return
 
-    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
-    env = await ExecEnv.from_docker_image(IMAGE_NAME)
+    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+    env = await ExecEnv.from_docker_image(LOCAL_IMAGE_NAME)
     
     goal = "Mark email 'e1' as URGENT and then FINISH."
     
