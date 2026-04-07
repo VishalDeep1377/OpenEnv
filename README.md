@@ -15,7 +15,9 @@ app_port: 7860
 
   [![OpenEnv-1.0.0](https://img.shields.io/badge/OpenEnv-1.0.0-green?style=for-the-badge&logo=huggingface)](https://github.com/openenv)
   [![Build-Passing](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)](https://huggingface.co/spaces/vishaldeep1022/exec-env-assistant)
+  [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-lg-dark.svg)](https://huggingface.co/spaces/vishaldeep1022/exec-env-assistant)
   [![Docker-Ready](https://img.shields.io/badge/Deployment-Docker-blue?style=for-the-badge&logo=docker)](https://www.docker.com/)
+
   [![License-MIT](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)](https://opensource.org/licenses/MIT)
 </div>
 
