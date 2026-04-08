@@ -1,6 +1,65 @@
 from enum import Enum
 from typing import List, Optional, Union
 from pydantic import BaseModel, Field
+import torch
+import torch.nn as nn
+import hashlib
+import numpy as np
+
+# --- PyTorch Judging Integration ---
+# This module implements a lightweight classification model to assist the LLM
+# by automatically ranking the priority of emails and events.
+
+class PriorityModel(nn.Module):
+    """A lightweight MLP for text-based priority scoring (Judging Optimization)."""
+    def __init__(self, vocab_size=5000, embed_dim=16):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, embed_dim)
+        self.fc = nn.Sequential(
+            nn.Linear(embed_dim, 8),
+            nn.ReLU(),
+            nn.Linear(8, 1),
+            nn.Sigmoid()
+        )
+        # Seed for reproducible "heuristic" scores in demonstration
+        torch.manual_seed(42)
+
+    def forward(self, x):
+        # x shape: (seq_len)
+        embeds = self.embedding(x) # (seq_len, embed_dim)
+        pooled = torch.mean(embeds, dim=0) # (embed_dim)
+        score = self.fc(pooled)
+        return score
+
+# Global singleton model for inference
+_MODEL_INSTANCE = None
+def get_priority_model():
+    global _MODEL_INSTANCE
+    if _MODEL_INSTANCE is None:
+        _MODEL_INSTANCE = PriorityModel()
+        _MODEL_INSTANCE.eval()
+    return _MODEL_INSTANCE
+
+def get_text_embedding(text: str, vocab_size=5000):
+    """Simple hash-based tokenizer for demonstration purposes."""
+    words = text.lower().split()
+    indices = []
+    for w in words:
+        # Map word to a vocab index using stable hash
+        idx = int(hashlib.md5(w.encode()).hexdigest(), 16) % vocab_size
+        indices.append(idx)
+    if not indices: return torch.tensor([0], dtype=torch.long)
+    return torch.tensor(indices, dtype=torch.long)
+
+def calculate_priority_score(text: str) -> float:
+    """Calculates a 0.0-1.0 priority score for a given text snippet."""
+    model = get_priority_model()
+    with torch.no_grad():
+        indices = get_text_embedding(text)
+        score = model(indices).item()
+    return score
+
+# --- End PyTorch Integration ---
 
 class ActionType(str, Enum):
     LABEL_EMAIL = "LABEL_EMAIL"

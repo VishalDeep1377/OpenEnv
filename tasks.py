@@ -38,10 +38,13 @@ class EasyTriageTask(Task):
 
     def get_step_reward(self, env, action) -> float:
         # Robust string matching for circular import safety
-        act_type = str(action.action_type)
+        act_type = str(action.action_type).upper()
+        email_id = str(action.email_id or "").strip("'\" ")
+        label = str(action.label or "").strip("'\" ")
+        
         if "LABEL_EMAIL" in act_type:
-            if action.email_id == "e1" and action.label == "URGENT": return 0.5
-            if action.email_id == "e2" and action.label == "ARCHIVE": return 0.5
+            if email_id == "e1" and label == "URGENT": return 0.5
+            if email_id == "e2" and label == "ARCHIVE": return 0.5
         return 0.01
 
 class MediumSchedulingTask(Task):
@@ -67,12 +70,17 @@ class MediumSchedulingTask(Task):
         return float(max(0.01, min(final_score, 0.99)))
 
     def get_step_reward(self, env, action) -> float:
-        act_type = str(action.action_type)
+        act_type = str(action.action_type).upper()
+        title = str(action.title or "").strip("'\" ")
+        start_time = str(action.start_time or "").strip("'\" ")
+        email_id = str(action.email_id or "").strip("'\" ")
+        label = str(action.label or "").strip("'\" ")
+        
         if "UPSERT_EVENT" in act_type:
-            if "Coffee" in (action.title or "") and "10:00:00" in (action.start_time or ""):
+            if "Coffee" in title and "10:00:00" in start_time:
                 return 0.79
         if "LABEL_EMAIL" in act_type:
-            if action.email_id == "e3" and action.label == "ARCHIVE":
+            if email_id == "e3" and label == "ARCHIVE":
                 return 0.2
         return 0.01
 
@@ -92,11 +100,16 @@ class HardConflictTask(Task):
         return float(max(0.01, min(final_score, 0.99)))
 
     def get_step_reward(self, env, action) -> float:
-        act_type = str(action.action_type)
+        act_type = str(action.action_type).upper()
+        event_id = str(action.event_id or "").strip("'\" ")
+        start_time = str(action.start_time or "").strip("'\" ")
+        title = str(action.title or "").strip("'\" ")
+        priority = str(action.priority or "").strip("'\" ")
+
         if "UPSERT_EVENT" in act_type:
-            if action.event_id == "c1" and "16:00:00" in (action.start_time or ""):
+            if event_id == "c1" and "16:00:00" in start_time:
                 return 0.49
-            if "Board Meeting" in (action.title or "") and "14:00:00" in (action.start_time or "") and action.priority == "HIGH":
+            if "Board Meeting" in title and "14:00:00" in start_time and priority == "HIGH":
                 return 0.5
         return 0.01
 
