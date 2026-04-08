@@ -34,7 +34,7 @@ class EasyTriageTask(Task):
             
         # Success is multiplied by the Boss's Trust
         final_score = score * env.state().trust_score
-        return max(0.01, min(final_score, 0.99))
+        return float(max(0.01, min(final_score, 0.99)))
 
     def get_step_reward(self, env, action) -> float:
         # Robust string matching for circular import safety
@@ -42,7 +42,7 @@ class EasyTriageTask(Task):
         if "LABEL_EMAIL" in act_type:
             if action.email_id == "e1" and action.label == "URGENT": return 0.5
             if action.email_id == "e2" and action.label == "ARCHIVE": return 0.5
-        return 0.0
+        return 0.01
 
 class MediumSchedulingTask(Task):
     def get_goal(self) -> str:
@@ -61,20 +61,20 @@ class MediumSchedulingTask(Task):
                 archived = True
                 break
         
-        if scheduled: score += 0.8
+        if scheduled: score += 0.79
         if archived: score += 0.2
         final_score = score * env.state().trust_score
-        return max(0.01, min(final_score, 0.99))
+        return float(max(0.01, min(final_score, 0.99)))
 
     def get_step_reward(self, env, action) -> float:
         act_type = str(action.action_type)
         if "UPSERT_EVENT" in act_type:
             if "Coffee" in (action.title or "") and "10:00:00" in (action.start_time or ""):
-                return 0.8
+                return 0.79
         if "LABEL_EMAIL" in act_type:
             if action.email_id == "e3" and action.label == "ARCHIVE":
                 return 0.2
-        return 0.0
+        return 0.01
 
 class HardConflictTask(Task):
     def get_goal(self) -> str:
@@ -86,19 +86,19 @@ class HardConflictTask(Task):
         sync_moved = any("Project Sync" in ev.title and "16:00:00" in ev.start_time for ev in env.calendar)
         board_created = any("Board Meeting" in ev.title and "14:00:00" in ev.start_time and ev.priority == "HIGH" for ev in env.calendar)
         
-        if sync_moved: score += 0.5
+        if sync_moved: score += 0.49
         if board_created: score += 0.5
         final_score = score * env.state().trust_score
-        return max(0.01, min(final_score, 0.99))
+        return float(max(0.01, min(final_score, 0.99)))
 
     def get_step_reward(self, env, action) -> float:
         act_type = str(action.action_type)
         if "UPSERT_EVENT" in act_type:
             if action.event_id == "c1" and "16:00:00" in (action.start_time or ""):
-                return 0.5
+                return 0.49
             if "Board Meeting" in (action.title or "") and "14:00:00" in (action.start_time or "") and action.priority == "HIGH":
                 return 0.5
-        return 0.0
+        return 0.01
 
 def get_tasks() -> List[Task]:
     return [EasyTriageTask(), MediumSchedulingTask(), HardConflictTask()]
