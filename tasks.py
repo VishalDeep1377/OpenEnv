@@ -33,7 +33,8 @@ class EasyTriageTask(Task):
             if email.id == "e2" and "ARCHIVE" in email.labels: score += 0.5
             
         # Success is multiplied by the Boss's Trust
-        return min(score * env.state().trust_score, 1.0)
+        final_score = score * env.state().trust_score
+        return max(0.01, min(final_score, 0.99))
 
     def get_step_reward(self, env, action) -> float:
         # Robust string matching for circular import safety
@@ -62,7 +63,8 @@ class MediumSchedulingTask(Task):
         
         if scheduled: score += 0.8
         if archived: score += 0.2
-        return min(score * env.state().trust_score, 1.0)
+        final_score = score * env.state().trust_score
+        return max(0.01, min(final_score, 0.99))
 
     def get_step_reward(self, env, action) -> float:
         act_type = str(action.action_type)
@@ -86,7 +88,8 @@ class HardConflictTask(Task):
         
         if sync_moved: score += 0.5
         if board_created: score += 0.5
-        return min(score * env.state().trust_score, 1.0)
+        final_score = score * env.state().trust_score
+        return max(0.01, min(final_score, 0.99))
 
     def get_step_reward(self, env, action) -> float:
         act_type = str(action.action_type)
