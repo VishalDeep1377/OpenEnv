@@ -72,7 +72,11 @@ def parse_action(response: str) -> ExecAction:
     
     try:
         action_type = ActionType(action_type_str)
+        return ExecAction(action_type=action_type, **params)
     except ValueError:
+        return ExecAction(action_type=ActionType.FINISH)
+    except Exception:
+        # Pydantic validation error if params are wrong
         return ExecAction(action_type=ActionType.FINISH)
     
 def log_start(task: str, env: str, model: str) -> None:
@@ -84,7 +88,7 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-    print(f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
+    print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
 
 async def run_task(task_id: str, client: OpenAI, env: ExecEnv):
 
@@ -96,42 +100,46 @@ async def run_task(task_id: str, client: OpenAI, env: ExecEnv):
     rewards = []
     steps_taken = 0
     
-    result = await env.reset(task_id=task_id)
-    for step in range(1, MAX_STEPS + 1):
-        if result.done: break
-        
-        obs_text = f"Observation: {result.observation.model_dump_json()}\nGoal: {goal}"
-        
-        try:
-            response = client.chat.completions.create(
-                model=MODEL_NAME,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": obs_text}
-                ],
-                temperature=TEMPERATURE,
-                max_tokens=MAX_TOKENS
-            )
-            action_str = response.choices[0].message.content.strip()
-        except Exception as e:
-            print(f"LLM API Error: {e}", file=sys.stderr)
-            action_str = "ACTION: FINISH"
+    success = False
+    final_score = 0.0
+    try:
+        result = await env.reset(task_id=task_id)
+        for step in range(1, MAX_STEPS + 1):
+            if result.done: break
+            
+            obs_text = f"Observation: {result.observation.model_dump_json()}\nGoal: {goal}"
+            
+            try:
+                response = client.chat.completions.create(
+                    model=MODEL_NAME,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": obs_text}
+                    ],
+                    temperature=TEMPERATURE,
+                    max_tokens=MAX_TOKENS
+                )
+                action_str = response.choices[0].message.content.strip()
+            except Exception as e:
+                print(f"LLM API Error: {e}", file=sys.stderr)
+                action_str = "ACTION: FINISH"
 
-        action = parse_action(action_str)
-        result = await env.step(action)
-        
-        # Log the step with precisely formatted fields
-        log_step(step, action_str, result.reward, result.done, result.observation.last_action_error)
-        rewards.append(result.reward)
-        steps_taken = step
-        
-        if result.done: break
+            action = parse_action(action_str)
+            result = await env.step(action)
+            
+            # Log the step with precisely formatted fields
+            log_step(step, action_str, result.reward, result.done, result.observation.last_action_error)
+            rewards.append(result.reward)
+            steps_taken = step
+            
+            if result.done: break
 
-    # Final summary for this task
-    final_score = selected_task.evaluate(env)
-    final_score = min(max(final_score, 0.0), 1.0)
-    success = final_score >= SUCCESS_SCORE_THRESHOLD
-    log_end(success, steps_taken, final_score, rewards)
+        # Final summary for this task
+        final_score = selected_task.evaluate(env)
+        final_score = min(max(final_score, 0.01), 0.99)
+        success = final_score >= SUCCESS_SCORE_THRESHOLD
+    finally:
+        log_end(success, steps_taken, final_score, rewards)
     return final_score
 
 async def main() -> None:

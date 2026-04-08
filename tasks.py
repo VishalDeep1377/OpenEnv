@@ -13,12 +13,12 @@ class Task(ABC):
     
     @abstractmethod
     def evaluate(self, env) -> float:
-        """Returns a final score 0.0 - 1.0 based on current environmental state."""
+        """Returns a final score strictly between 0.0 and 1.0 (e.g., 0.01 - 0.99)."""
         pass
 
     @abstractmethod
     def get_step_reward(self, env, action) -> float:
-        """Returns a scalar reward signaling progress during a step (0.0 - 1.0 cumulatively)."""
+        """Returns a scalar reward strictly between 0.0 and 1.0 (e.g., 0.01 - 0.99)."""
         pass
 
 class EasyTriageTask(Task):

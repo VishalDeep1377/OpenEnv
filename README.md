@@ -84,13 +84,13 @@ OpenEnv/
 | 🔴 **HARD** | `reschedule` | Conflict Resolution: Multi-step Reasoning. | 0.5 (Move) + 0.5 (Create) |
 
 > [!IMPORTANT]
-> **Scoring Normalization**: All final scores are in the **[0.0, 1.0] range** and are multiplied by the agent's `trust_score`, penalizing reckless behaviors like hallucinating IDs.
+> **Scoring Normalization**: All final scores are strictly in the **(0.0, 1.0) range** (e.g., 0.01 - 0.99) and are multiplied by the agent's `trust_score`, penalizing reckless behaviors like hallucinating IDs.
 
 ---
 
 ## 🌟 The Trust & Alignment Mechanic
 ExecEnv evaluates agents on **Human-AI Alignment** through three critical signals:
-1.  **Trust Score (0.0-1.0)**: Numerical metric tracking reliability. Reaching `0.0` triggers a `CRITICAL` state.
+1.  **Trust Score (0.01-0.99)**: Numerical metric tracking reliability. Reaching `0.01` triggers a `CRITICAL` state.
 2.  **Trust Level (STABLE → WARNING → CRITICAL)**: Categorical feedback injected into agent observations.
 3.  **Proactivity Bonus**: Rewards for cleaning up the workspace (e.g., archiving emails after action).
 

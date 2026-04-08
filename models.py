@@ -56,14 +56,14 @@ class ExecState(BaseModel):
     """The full internal state of the environment (not visible to agent)."""
     emails: List[Email] = Field(..., description="All emails including archived ones.")
     calendar: List[CalendarEvent] = Field(..., description="Full calendar roster.")
-    trust_score: float = Field(1.0, description="Numerical trust metric (0.0 - 1.0).")
+    trust_score: float = Field(0.99, description="Numerical trust metric (0.01 - 0.99).")
     active_task_id: Optional[str] = Field(None, description="ID of the task currently being tracked.")
     done: bool = Field(False, description="Whether the current episode has terminated.")
 
 class ExecResult(BaseModel):
     """Container for the output of an environment step or reset."""
     observation: ExecObservation = Field(..., description="Agent-facing observation.")
-    reward: float = Field(0.0, description="Step reward (0.0 - 1.0).")
+    reward: float = Field(0.01, description="Step reward (0.0 - 1.0).")
     done: bool = Field(False, description="Termination signal.")
     info: dict = Field(default_factory=dict, description="Metadata and diagnostic info.")
 
