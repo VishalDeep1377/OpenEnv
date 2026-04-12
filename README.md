@@ -1,3 +1,17 @@
+---
+title: ExecEnv Assistant
+emoji: 🤖
+colorFrom: indigo
+colorTo: violet
+sdk: docker
+app_port: 7860
+pinned: false
+tags:
+- openenv
+- pytorch-hackathon
+- assistant
+---
+
 # 🚀 OpenEnv: The Socially Intelligent Executive Assistant
 
 [![OpenEnv](https://img.shields.io/badge/Benchmark-OpenEnv-blue?style=for-the-badge)](https://github.com/meta-pytorch/OpenEnv)
