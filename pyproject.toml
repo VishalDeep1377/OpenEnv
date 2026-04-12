@@ -14,7 +14,11 @@ dependencies = [
     "openenv-core",
     "pydantic>=2.0.0",
     "openai",
-    "torch>=2.8.0",
+    "torch>=2.0.0",
+    "numpy>=1.24.0",
+    "websockets>=11.0.0",
+    "httpx>=0.24.0",
+    "python-dotenv"
 ]
 
 [project.scripts]

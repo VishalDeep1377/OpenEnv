@@ -28,6 +28,10 @@ tasks:
     difficulty: "hard"
     description: "Resolve calendar conflicts and update priorities."
     grader: "tasks:HardConflictTask"
+  - id: "chaos"
+    difficulty: "extreme"
+    description: "Adaptive emergency handling and real-time reasoning."
+    grader: "tasks:ChaosSchedulingTask"
 
 # Space Configuration
 action_space: "ExecAction (Pydantic)"

@@ -6,6 +6,7 @@ import re
 from typing import List, Optional
 from openai import OpenAI
 from dotenv import load_dotenv
+import httpx
 
 # Load local environment variables if present
 load_dotenv()
@@ -23,8 +24,9 @@ MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 HF_TOKEN = os.getenv("HF_TOKEN") # Strictly no hardcoded default
 
 
-# Optional - for from_docker_image()
+# Optional - for from_docker_image() or live server connection
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
+ENV_URL = os.getenv("ENV_URL") # E.g., http://localhost:7860
 
 TASK_NAME = os.getenv("EXEC_ENV_TASK", "triage")
 BENCHMARK = "exec_env"
@@ -73,12 +75,29 @@ def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
 def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
-    error_val = error if error else "null"
+    error_val = error if (error and error.strip()) else "null"
     print(f"[STEP] step={step} action={action} reward={reward:.2f} done={str(done).lower()} error={error_val}", flush=True)
 
-def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+def log_end(success: bool, steps: int, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-    print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
+    print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}", flush=True)
+
+class HttpExecEnv:
+    """A client-side proxy for the ExecEnv server to enable live dashboard updates."""
+    def __init__(self, base_url: str):
+        self.base_url = base_url.rstrip("/")
+        self.client = httpx.AsyncClient(base_url=self.base_url, timeout=30.0)
+
+    async def reset(self, task_id: str) -> ExecResult:
+        resp = await self.client.post("/reset", params={"task_id": task_id})
+        return ExecResult(**resp.json())
+
+    async def step(self, action: ExecAction) -> ExecResult:
+        resp = await self.client.post("/step", json=action.model_dump())
+        return ExecResult(**resp.json())
+
+    async def close(self):
+        await self.client.aclose()
 
 async def run_task(task_id: str, client: OpenAI, env: ExecEnv):
 
@@ -138,7 +157,7 @@ async def run_task(task_id: str, client: OpenAI, env: ExecEnv):
         final_score = min(max(final_score, 0.01), 0.99)
         success = final_score >= SUCCESS_SCORE_THRESHOLD
     finally:
-        log_end(success, steps_taken, final_score, rewards)
+        log_end(success, steps_taken, rewards)
     return final_score
 
 async def main() -> None:
@@ -147,10 +166,16 @@ async def main() -> None:
         return
 
     client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
-    env = await ExecEnv.from_docker_image(LOCAL_IMAGE_NAME)
     
-    # Run all 3 mandatory tasks for the benchmark
-    all_tasks = ["triage", "schedule", "reschedule"]
+    if ENV_URL:
+        print(f"📡 Connecting to Live Environment at {ENV_URL}...")
+        env = HttpExecEnv(ENV_URL)
+    else:
+        print("🏠 Running in Local Standalone Mode (Hackathon Logic)")
+        env = await ExecEnv.from_docker_image(LOCAL_IMAGE_NAME)
+    
+    # Run all 4 mandatory tasks for the benchmark (including Chaos)
+    all_tasks = ["triage", "schedule", "reschedule", "chaos"]
     scores = {}
     
     for t_id in all_tasks:

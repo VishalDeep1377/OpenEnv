@@ -7,3 +7,6 @@ uvicorn>=0.23.0
 pytest>=7.4.0
 httpx>=0.24.0
 python-dotenv
+torch>=2.0.0
+numpy>=1.24.0
+websockets>=11.0.0

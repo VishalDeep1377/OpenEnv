@@ -3,3 +3,4 @@ uvicorn
 openenv-core
 pydantic>=2.0.0
 openai
+torch>=2.8.0

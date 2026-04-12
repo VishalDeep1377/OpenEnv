@@ -1,6 +1,7 @@
 import os
 import uuid
 import asyncio
+import json
 from typing import List, Optional, Tuple
 from datetime import datetime, timedelta
 from pydantic import BaseModel, Field
@@ -16,7 +17,10 @@ class ExecEnv:
         self._trust_score = 0.99  # Range strictly within (0, 1)
         self._last_error: Optional[str] = None
         self._done = False
+        self._reasoning_trace = []
+        self._persistence_path = "env_state.json"
         self.active_task = None
+        self.load_state() # Persistent recovery
         self.reset_state()
 
     @property
@@ -47,6 +51,23 @@ class ExecEnv:
         self._trust_score = 0.99
         self._last_error = None
         self._done = False
+        self._reasoning_trace = ["Environment Initialized."]
+
+    def save_state(self):
+        """Persistence Layer: Saves trust and critical metrics to disk."""
+        try:
+            with open(self._persistence_path, "w") as f:
+                json.dump({"trust_score": self._trust_score}, f)
+        except Exception: pass
+
+    def load_state(self):
+        """Persistence Layer: Loads metrics from disk."""
+        try:
+            if os.path.exists(self._persistence_path):
+                with open(self._persistence_path, "r") as f:
+                    data = json.load(f)
+                    self._trust_score = data.get("trust_score", 0.99)
+        except Exception: pass
 
     async def reset(self, task_id: Optional[str] = None) -> ExecResult:
         from tasks import get_tasks
@@ -55,8 +76,9 @@ class ExecEnv:
         task_id = (task_id or "triage").lower()
         
         if "triage" in task_id: self.active_task = tasks[0]
-        elif "schedule" in task_id: self.active_task = tasks[1]
+        elif task_id == "schedule": self.active_task = tasks[1]
         elif "reschedule" in task_id: self.active_task = tasks[2]
+        elif "chaos" in task_id: self.active_task = tasks[3]
         else: self.active_task = tasks[0]
             
         return ExecResult(observation=self._get_obs(), reward=0.01, done=False)
@@ -81,7 +103,8 @@ class ExecEnv:
             calendar=self._calendar,
             trust_score=self._trust_score,
             active_task_id=self.active_task.__class__.__name__ if self.active_task else None,
-            done=self._done
+            done=self._done,
+            info={"reasoning_trace": "\n".join(self._reasoning_trace)}
         )
 
     def _update_trust(self, delta: float):
@@ -158,6 +181,21 @@ class ExecEnv:
 
         # Normalize reward to strictly (0.01, 0.99)
         final_reward = max(0.01, min(0.99, reward))
+        
+        # --- Advanced Feature: Real-time Event Injection (Chaos) ---
+        if self.active_task and self.active_task.__class__.__name__ == "ChaosSchedulingTask":
+            if not self._done and len(self._reasoning_trace) == 2:
+                # Inject a surprise conflict mid-episode
+                chaos_email = Email(
+                    id="chaos_1", 
+                    sender="emergency@hq.com", 
+                    subject="EMERGENCY: Infrastructure Failure", 
+                    body="The server rack is melting. Schedule an Emergency Zoom at 3 PM TODAY."
+                )
+                self._emails.append(chaos_email)
+                self._reasoning_trace.append("⚠️ [CHAOS INJECTED] Emergency email arrived.")
+
+        self.save_state()
 
         return ExecResult(
             observation=self._get_obs(), 
@@ -167,7 +205,8 @@ class ExecEnv:
                 "step_reward": task_step_reward,
                 "final_score": self.active_task.evaluate(self) if self.active_task else 0.01,
                 "trust_score": self._trust_score,
-                "error": self._last_error
+                "error": self._last_error,
+                "reasoning_trace": "\n".join(self._reasoning_trace)
             }
         )
 

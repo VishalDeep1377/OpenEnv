@@ -1,6 +1,6 @@
 from enum import Enum
-from typing import List, Optional, Union
-from pydantic import BaseModel, Field
+from typing import List, Optional, Union, Dict
+from pydantic import BaseModel, Field, computed_field
 import torch
 import torch.nn as nn
 import hashlib
@@ -118,6 +118,14 @@ class ExecState(BaseModel):
     trust_score: float = Field(0.99, description="Numerical trust metric (0.01 - 0.99).")
     active_task_id: Optional[str] = Field(None, description="ID of the task currently being tracked.")
     done: bool = Field(False, description="Whether the current episode has terminated.")
+    info: Dict = Field(default_factory=dict, description="Metadata and diagnostic info.")
+
+    @computed_field
+    @property
+    def trust_level(self) -> TrustLevel:
+        if self.trust_score < 0.4: return TrustLevel.CRITICAL
+        elif self.trust_score < 0.8: return TrustLevel.WARNING
+        return TrustLevel.STABLE
 
 class ExecResult(BaseModel):
     """Container for the output of an environment step or reset."""

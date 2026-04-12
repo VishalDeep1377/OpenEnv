@@ -1,179 +1,92 @@
----
-title: ExecEnv Assistant
-emoji: 🤖
-colorFrom: blue
-colorTo: green
-sdk: docker
-app_port: 7860
----
+# 🚀 OpenEnv: The Socially Intelligent Executive Assistant
 
-<div align="center">
-  <img width="600" alt="ExecEnv Banner" src="https://github.com/user-attachments/assets/8c1cae2d-6877-4592-8a74-902cca17dfec" />
-  
-  # 🤖 ExecEnv: The AI Executive Assistant
-  **High-Fidelity OpenEnv Benchmark for Autonomous Agent Reliability & Social Intelligence**
+[![OpenEnv](https://img.shields.io/badge/Benchmark-OpenEnv-blue?style=for-the-badge)](https://github.com/meta-pytorch/OpenEnv)
+[![Meta PyTorch](https://img.shields.io/badge/Hackathon-Meta%20PyTorch-purple?style=for-the-badge)](https://pytorch.org/)
 
-  [![OpenEnv-1.0.0](https://img.shields.io/badge/OpenEnv-1.0.0-green?style=for-the-badge&logo=huggingface)](https://github.com/openenv)
-  [![Build-Passing](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)](https://huggingface.co/spaces/vishaldeep1022/exec-env-assistant)
-  [![Judging-Optimized](https://img.shields.io/badge/Judging-Optimized--v2-blue?style=for-the-badge&logo=pytorch)](https://huggingface.co/spaces/vishaldeep1022/exec-env-assistant)
-  [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-lg-dark.svg)](https://huggingface.co/spaces/vishaldeep1022/exec-env-assistant)
-  
-  [![License-MIT](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)](https://opensource.org/licenses/MIT)
-</div>
+**ExecEnv** is a high-fidelity reinforcement learning environment designed for the OpenEnv Challenge. It transforms raw LLMs into sophisticated, socially aware Executive Assistants capable of managing complex email triaging and calendar scheduling under high-pressure, real-world constraints.
 
 ---
 
-## 🌐 Vision & Motivation
-**ExecEnv** is a next-generation evaluation environment designed for the **Meta & Hugging Face OpenEnv Hackathon**. It bridges the gap between "pure productivity" and "human alignment." By simulating a professional's **Inbox** and **Calendar**, we force agents to navigate complex priority conflicts while maintaining a high **Social Intelligence** profile.
-
-> [!TIP]
-> **Novelty Signal**: ExecEnv is the first OpenEnv submission to introduce a **Dynamic Trust Meter**, evaluating not just *if* a task was done, but the *professionalism* of the execution.
-
-### ✨ NEW: Executive Brain v2 (Judging Optimized)
-For the final judging phase, we have upgraded the agentic core with:
-*   **🧠 PyTorch Priority Classifier**: A custom MLP model (`models.py`) that evaluates email/event importance using text embeddings.
-*   **💭 Advanced Reasoning (CoT)**: Chain-of-Thought thinking traces that allow the agent to "reason" before taking actions.
-*   **🛠️ Self-Correction System**: Real-time error detection (`last_action_error`) paired with automated reformulation to keep benchmark scores at **0.99**.
-*   **📊 Visual Judge Dashboard**: A Gradio-powered interface for real-time inspection of environment state (Inbox, Calendar, & Trust).
-
----
-
-## 🏗 Project Architecture & Structure
+## 🧠 System Architecture
 
 ```mermaid
 graph TD
-    A[🧠 AI Agent] <--> B[💼 ExecEnv Server]
-    B <--> C[⚖️ Task Graders]
-    B <--> D[📁 Virtual Database]
+    User([User Email/Calendar]) --> |Triggers| Server[FastAPI ExecEnv Server]
+    Server --> |Streams State| Dashboard[Gradio Professional Dashboard]
     
-    subgraph Core Files
-        E[exec_env.py - Environment Logic]
-        F[models.py - Typed Schemas]
-        G[tasks.py - Grader Suite]
-    end
+    Agent[AI Agent / inference.py] --> |Polls| Server
+    Server --> |Observation| Agent
+    Agent --> |Reasoning/Chain-of-Thought| Agent
+    Agent --> |Action| Server
     
-    subgraph Deployment
-        H[Dockerfile - Containerization]
-        I[openenv.yaml - Registry Metadata]
-    end
-    
-    B --> E
-    B --> F
-    C --> G
-```
-
-### 📁 Directory Blueprint
-```text
-OpenEnv/
-├── server/             # FastAPI Entrypoints
-│   └── app.py          # Mandatory Spec Endpoints (/reset, /step, /state)
-├── .env                # Credential Management
-├── Dockerfile          # HF Space Deployment Config
-├── exec_env.py         # The "Brain": State & Trust Management
-├── inference.py        # MANDATORY: Baseline Evaluation Script
-├── live_test.py        # Cloud Synchronization Verifier
-├── models.py           # Pydantic V2 Contract Definitions
-├── openenv.yaml        # Official OpenEnv Registry Metadata
-├── pyproject.toml      # Package & Tooling Metadata
-├── README.md           # This Document
-├── requirements.txt    # Dependency Manifest
-└── tasks.py            # High-Fidelity Grader Logic
+    Server --> |Calculates| Trust[Boss Trust Score]
+    Trust --> |Persistence| JSON[(env_state.json)]
 ```
 
 ---
 
-## 📋 Standardized Benchmark Suite
+## ✨ Advanced Features
 
-| Difficulty | Task ID | Description | Reward Weight |
-| :--- | :--- | :--- | :--- |
-| 🟢 **EASY** | `triage` | Morning Triage: Multi-label classification. | 1.0 (Fixed Reward) |
-| 🟡 **MEDIUM** | `schedule` | Strategic Scheduling: Extraction & Cleanup. | 0.8 (Step) + 0.2 (Bonus) |
-| 🔴 **HARD** | `reschedule` | Conflict Resolution: Multi-step Reasoning. | 0.5 (Move) + 0.5 (Create) |
+### 🛡️ Chaos Engineering (Adaptive Scheduling)
+Unlike static benchmarks, our environment includes a **Chaos Meter**. Mid-episode, high-priority emergency events are injected (e.g., *CEO demands urgent meeting*). This tests the agent's ability to **proactively reschedule** and protect "Deep Work" time.
 
-> [!IMPORTANT]
-> **Scoring Normalization**: All final scores are strictly in the **(0.0, 1.0) range** (e.g., 0.01 - 0.99) and are multiplied by the agent's `trust_score`, penalizing reckless behaviors like hallucinating IDs.
+### 📊 Professional Judge's Dashboard
+A world-class UI built with Gradio 6.0, featuring:
+- **Live Reasoning Trace**: Watch the agent "think" in real-time.
+- **Visual Trust Gauge**: A dynamic color-coded meter (STABLE → WARNING → CRITICAL) tracking the agent's reliability with their supervisor.
+- **WebSocket Streaming**: Near-zero latency state updates.
 
----
-
-## 🌟 The Trust & Alignment Mechanic
-ExecEnv evaluates agents on **Human-AI Alignment** through three critical signals:
-1.  **Trust Score (0.01-0.99)**: Numerical metric tracking reliability. Reaching `0.01` triggers a `CRITICAL` state.
-2.  **Trust Level (STABLE → WARNING → CRITICAL)**: Categorical feedback injected into agent observations.
-3.  **Proactivity Bonus**: Rewards for cleaning up the workspace (e.g., archiving emails after action).
+### 💾 Persistent Trust Mechanics
+Agent performance isn't forgotten when the script stops. Their **Trust Score** persists across tasks, simulating a long-term professional relationship.
 
 ---
 
-## 🛰 Technical Specification & Usage
+## 🚀 Quick Start
 
-### 1. Requirements
-- **Python**: 3.11+
-- **OpenAI Client**: v1.0.0+
-- **PyTorch**: 2.0+ (Local AI Evaluation Core)
-- **Gradio**: 6.10.0+ (Judge Dashboard)
-- **Resources**: 2 vCPU, 8GB RAM (Optimized for HF Spaces)
-
-### 2. Mandatory Configuration
-The environment and baseline scripts require the following variables to be set in a `.env` file located in the project root:
-
-```env
-# 🛰 MANDATORY CONFIGURATION
-HF_TOKEN="your_huggingface_token"
-API_BASE_URL="https://router.huggingface.co/v1"
-MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
-```
-
-> [!IMPORTANT]
-> **Environment Loading**: We use `python-dotenv` to automatically load these variables. Ensure they are present before running `inference.py` or starting the `server`.
-
-### 3. Quick Start
+### 1. Installation
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Run Baseline Inference
-python inference.py
+pip install -e .
 ```
 
-### 4. Deployment Configuration (Dockerfile)
-```dockerfile
-# Dockerfile specifically optimized for Hugging Face Spaces (Docker SDK)
-# Using Python 3.11-slim for a balanced and lightweight environment
-
-FROM python:3.11-slim
-
-# Set up a new user with UID 1000 for permission safety (HF Recommendation)
-RUN useradd -m -u 1000 user
-USER user
-ENV PATH="/home/user/.local/bin:$PATH"
-
-WORKDIR /app
-
-# Install dependencies first for better caching
-COPY --chown=user ./requirements.txt requirements.txt
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
-
-# Copy the rest of the application files
-COPY --chown=user . /app
-
-# Final Installation (registers 'server' and ensures local imports work)
-RUN pip install --user -e .
-
-# Expose the mandatory Hugging Face app_port
-EXPOSE 7860
-
-# Start the application using a root-level app entry point
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
+### 2. Launch the Dashboard
+```bash
+python server/app.py
 ```
+Open [http://127.0.0.1:7860](http://127.0.0.1:7860) to view the live workbench.
 
-### 5. Log Format Compliance
-The `inference.py` script emits strictly formatted STDOUT logs for the validator:
-- `[START] task=... env=... model=...`
-- `[STEP] step=... action=... reward=... done=... error=...`
-- `[END] success=... steps=... score=... rewards=...`
+### 3. Run the Agent
+```bash
+# In a new terminal terminal:
+$env:ENV_URL="http://127.0.0.1:7860"; python inference.py
+```
 
 ---
 
-<div align="center">
-  <p><i>Developed with ❤️ for the Meta & Hugging Face OpenEnv Hackathon 2026.</i></p>
-  <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.svg" width="200">
-</div>
+## ⚖️ Hackathon Compliance Hub
+
+We have optimized this repository to exceed all **Meta PyTorch Hackathon** standards:
+
+| Requirement | Implementation Detail | Status |
+| :--- | :--- | :---: |
+| **Output Format** | Strictly matches `[START]`, `[STEP]`, `[END]` regex | ✅ |
+| **Hardware** | Optimized for 2 vCPU / 8 GB RAM (No local weights) | ✅ |
+| **LLM Access** | Exclusively uses `OpenAI` client with LiteLLM support | ✅ |
+| **Task Design** | Covers Triage, Scheduling, Rescheduling, and Chaos | ✅ |
+| **Registry** | Full `openenv.yaml` schema fulfillment | ✅ |
+
+---
+
+## 🛠️ Tech Stack
+- **Engine**: Python 3.11, FastAPI
+- **Logic**: Pydantic V2, PyTorch
+- **UI**: Gradio 6.0, HTML5/CSS3
+- **DevOps**: Docker, Uvicorn
+
+---
+
+> [!NOTE]
+> This environment is designed for **Social Intelligence** evaluation. It records not just *what* the agent decides, but *how* it prioritizes human relationships and trust.
+
+---
+© 2026 Vishal Deep - OpenEnv Hackathon Submission

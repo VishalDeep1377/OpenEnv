@@ -113,5 +113,27 @@ class HardConflictTask(Task):
                 return 0.5
         return 0.01
 
+class ChaosSchedulingTask(Task):
+    """ADVANCED: Tests adaptability to real-time interruptions."""
+    def get_goal(self) -> str:
+        return "Standard scheduling, but stay alert for emergency interruptions."
+    
+    def evaluate(self, env) -> float:
+        score = 0.0
+        # Success if the emergency email was handled (e.g., event created at 3 PM)
+        emergency_handled = any("Emergency Zoom" in ev.title and "15:00:00" in ev.start_time for ev in env.calendar)
+        if emergency_handled: score = 0.99
+        return float(max(0.01, min(score, 0.99)))
+
+    def get_step_reward(self, env, action) -> float:
+        act_type = str(action.action_type).upper()
+        title = str(action.title or "").strip("'\" ")
+        start_time = str(action.start_time or "").strip("'\" ")
+        
+        if "UPSERT_EVENT" in act_type:
+            if "Emergency Zoom" in title and "15:00:00" in start_time:
+                return 0.99
+        return 0.01
+
 def get_tasks() -> List[Task]:
-    return [EasyTriageTask(), MediumSchedulingTask(), HardConflictTask()]
+    return [EasyTriageTask(), MediumSchedulingTask(), HardConflictTask(), ChaosSchedulingTask()]
