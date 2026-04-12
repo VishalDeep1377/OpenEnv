@@ -74,9 +74,16 @@ def parse_action(response: str) -> ExecAction:
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
-def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
+def log_step(step: int, action: ExecAction, reward: float, done: bool, error: Optional[str]) -> None:
     error_val = error if (error and error.strip()) else "null"
-    print(f"[STEP] step={step} action={action} reward={reward:.2f} done={str(done).lower()} error={error_val}", flush=True)
+    
+    # Format action as a canonical call string: ActionType(key1='val1', ...)
+    params = action.model_dump()
+    action_type = params.pop("action_type")
+    params_str = ", ".join(f"{k}='{v}'" for k, v in params.items() if v is not None)
+    action_call = f"{action_type}({params_str})"
+    
+    print(f"[STEP] step={step} action={action_call} reward={reward:.2f} done={str(done).lower()} error={error_val}", flush=True)
 
 def log_end(success: bool, steps: int, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
@@ -153,7 +160,7 @@ async def run_task(task_id: str, client: OpenAI, env: ExecEnv):
             result = await env.step(action)
             
             # 5. Mandatory Structured Logging
-            log_step(step, action_str, result.reward, result.done, result.observation.last_action_error)
+            log_step(step, action, result.reward, result.done, result.observation.last_action_error)
             rewards.append(result.reward)
             steps_taken = step
             if result.done: break
