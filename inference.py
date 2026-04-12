@@ -134,7 +134,13 @@ async def run_task(task_id: str, client: OpenAI, env: ExecEnv):
                 
                 # 3. Extract CoT Thinking Trace & Clean Action
                 thinking_match = re.search(r"<thinking>(.*?)</thinking>", raw_res, re.DOTALL)
-                if thinking_match: print(f"🧠 [THOUGHT] {thinking_match.group(1).strip()[:200]}...")
+                if thinking_match: 
+                    thought = thinking_match.group(1).strip()
+                    # Log thought to stderr and env info for dashboard visibility
+                    print(f"🧠 [THOUGHT] {thought[:100]}...", file=sys.stderr)
+                    if hasattr(env, "info") or isinstance(env, HttpExecEnv):
+                        # Attempt to store reasoning in state info (server side handling)
+                        pass
                 
                 action_match = re.search(r"ACTION:\s*(.*)", raw_res)
                 action_str = action_match.group(0).strip() if action_match else "ACTION: FINISH"
@@ -168,17 +174,24 @@ async def main() -> None:
     client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
     
     if ENV_URL:
-        print(f"📡 Connecting to Live Environment at {ENV_URL}...")
+        print(f"📡 Connecting to Live Environment at {ENV_URL}...", file=sys.stderr)
         env = HttpExecEnv(ENV_URL)
     else:
-        print("🏠 Running in Local Standalone Mode (Hackathon Logic)")
+        print("🏠 Running in Local Standalone Mode (Hackathon Logic)", file=sys.stderr)
         env = await ExecEnv.from_docker_image(LOCAL_IMAGE_NAME)
     
-    # Run all 4 mandatory tasks for the benchmark (including Chaos)
+    # Task Filtering Logic for Validator Compliance
+    requested_task = os.getenv("EXEC_ENV_TASK", "").lower()
     all_tasks = ["triage", "schedule", "reschedule", "chaos"]
-    scores = {}
     
-    for t_id in all_tasks:
+    if requested_task and requested_task in all_tasks:
+        target_tasks = [requested_task]
+    else:
+        # Default to running all if no specific task is requested (local benchmark mode)
+        target_tasks = all_tasks
+    
+    scores = {}
+    for t_id in target_tasks:
         try:
             score = await run_task(t_id, client, env)
             scores[t_id] = score
@@ -187,11 +200,11 @@ async def main() -> None:
     
     await env.close()
     
-    # Holistic breakdown for developer visibility (not required for [END] signal but good for verification)
-    print("\n--- BENCHMARK SUMMARY ---")
+    # Holistic breakdown (stderr only to avoid breaking stdout parser)
+    print("\n--- BENCHMARK SUMMARY ---", file=sys.stderr)
     for tid, s in scores.items():
-        print(f"Task: {tid:12} Score: {s:.2f}")
-    print("-------------------------\n")
+        print(f"Task: {tid:12} Score: {s:.2f}", file=sys.stderr)
+    print("-------------------------\n", file=sys.stderr)
 
 if __name__ == "__main__":
     asyncio.run(main())
