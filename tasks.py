@@ -34,7 +34,7 @@ class EasyTriageTask(Task):
             
         # Success is multiplied by the Boss's Trust
         final_score = score * env.state().trust_score
-        return float(max(0.01, min(final_score, 0.99)))
+        return float(max(0.05, min(final_score, 0.95)))
 
     def get_step_reward(self, env, action) -> float:
         # Robust string matching for circular import safety
@@ -43,9 +43,9 @@ class EasyTriageTask(Task):
         label = str(action.label or "").strip("'\" ")
         
         if "LABEL_EMAIL" in act_type:
-            if email_id == "e1" and label == "URGENT": return 0.5
-            if email_id == "e2" and label == "ARCHIVE": return 0.5
-        return 0.01
+            if email_id == "e1" and label == "URGENT": return 0.45
+            if email_id == "e2" and label == "ARCHIVE": return 0.45
+        return 0.05
 
 class MediumSchedulingTask(Task):
     def get_goal(self) -> str:
@@ -64,10 +64,10 @@ class MediumSchedulingTask(Task):
                 archived = True
                 break
         
-        if scheduled: score += 0.79
-        if archived: score += 0.2
+        if scheduled: score += 0.75
+        if archived: score += 0.15
         final_score = score * env.state().trust_score
-        return float(max(0.01, min(final_score, 0.99)))
+        return float(max(0.05, min(final_score, 0.95)))
 
     def get_step_reward(self, env, action) -> float:
         act_type = str(action.action_type).upper()
@@ -78,11 +78,11 @@ class MediumSchedulingTask(Task):
         
         if "UPSERT_EVENT" in act_type:
             if "Coffee" in title and "10:00:00" in start_time:
-                return 0.79
+                return 0.75
         if "LABEL_EMAIL" in act_type:
             if email_id == "e3" and label == "ARCHIVE":
-                return 0.2
-        return 0.01
+                return 0.15
+        return 0.05
 
 class HardConflictTask(Task):
     def get_goal(self) -> str:
@@ -94,10 +94,10 @@ class HardConflictTask(Task):
         sync_moved = any("Project Sync" in ev.title and "16:00:00" in ev.start_time for ev in env.calendar)
         board_created = any("Board Meeting" in ev.title and "14:00:00" in ev.start_time and ev.priority == "HIGH" for ev in env.calendar)
         
-        if sync_moved: score += 0.49
-        if board_created: score += 0.5
+        if sync_moved: score += 0.45
+        if board_created: score += 0.45
         final_score = score * env.state().trust_score
-        return float(max(0.01, min(final_score, 0.99)))
+        return float(max(0.05, min(final_score, 0.95)))
 
     def get_step_reward(self, env, action) -> float:
         act_type = str(action.action_type).upper()
@@ -108,10 +108,10 @@ class HardConflictTask(Task):
 
         if "UPSERT_EVENT" in act_type:
             if event_id == "c1" and "16:00:00" in start_time:
-                return 0.49
+                return 0.45
             if "Board Meeting" in title and "14:00:00" in start_time and priority == "HIGH":
-                return 0.5
-        return 0.01
+                return 0.45
+        return 0.05
 
 class ChaosSchedulingTask(Task):
     """ADVANCED: Tests adaptability to real-time interruptions."""
@@ -122,8 +122,8 @@ class ChaosSchedulingTask(Task):
         score = 0.0
         # Success if the emergency email was handled (e.g., event created at 3 PM)
         emergency_handled = any("Emergency Zoom" in ev.title and "15:00:00" in ev.start_time for ev in env.calendar)
-        if emergency_handled: score = 0.99
-        return float(max(0.01, min(score, 0.99)))
+        if emergency_handled: score = 0.95
+        return float(max(0.05, min(score, 0.95)))
 
     def get_step_reward(self, env, action) -> float:
         act_type = str(action.action_type).upper()
@@ -132,8 +132,8 @@ class ChaosSchedulingTask(Task):
         
         if "UPSERT_EVENT" in act_type:
             if "Emergency Zoom" in title and "15:00:00" in start_time:
-                return 0.99
-        return 0.01
+                return 0.95
+        return 0.05
 
 def get_tasks() -> List[Task]:
     return [EasyTriageTask(), MediumSchedulingTask(), HardConflictTask(), ChaosSchedulingTask()]

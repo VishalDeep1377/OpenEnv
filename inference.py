@@ -33,8 +33,8 @@ BENCHMARK = "exec_env"
 MAX_STEPS = 10
 TEMPERATURE = 0.0
 MAX_TOKENS = 512
-SUCCESS_SCORE_THRESHOLD = 0.1
-MAX_TOTAL_REWARD = 2.0  # Normalized for the 2-step baseline triage task
+SUCCESS_SCORE_THRESHOLD = 0.2
+MAX_TOTAL_REWARD = 1.0 
 
 SYSTEM_PROMPT = textwrap.dedent(
     """
@@ -165,9 +165,9 @@ async def run_task(task_id: str, client: OpenAI, env: ExecEnv):
             steps_taken = step
             if result.done: break
 
-        # Finalize
+        # Finalize with strict safety clamping
         final_score = selected_task.evaluate(env)
-        final_score = min(max(final_score, 0.01), 0.99)
+        final_score = min(max(final_score, 0.05), 0.95)
         success = final_score >= SUCCESS_SCORE_THRESHOLD
     finally:
         log_end(success, steps_taken, rewards)

@@ -14,7 +14,7 @@ class ExecEnv:
     def __init__(self):
         self._emails: List[Email] = []
         self._calendar: List[CalendarEvent] = []
-        self._trust_score = 0.99  # Range strictly within (0, 1)
+        self._trust_score = 0.95  # Range strictly within (0, 1), avoids 0.99 for rounding safety
         self._last_error: Optional[str] = None
         self._done = False
         self._reasoning_trace = []
@@ -48,7 +48,7 @@ class ExecEnv:
         self._calendar = [
             CalendarEvent(id="c1", title="Project Sync", start_time=tomorrow.isoformat(), end_time=(tomorrow + timedelta(hours=1)).isoformat(), priority="LOW"),
         ]
-        self._trust_score = 0.99
+        self._trust_score = 0.95
         self._last_error = None
         self._done = False
         self._reasoning_trace = ["Environment Initialized."]
@@ -66,7 +66,7 @@ class ExecEnv:
             if os.path.exists(self._persistence_path):
                 with open(self._persistence_path, "r") as f:
                     data = json.load(f)
-                    self._trust_score = data.get("trust_score", 0.99)
+                    self._trust_score = data.get("trust_score", 0.95)
         except Exception: pass
 
     async def reset(self, task_id: Optional[str] = None) -> ExecResult:
@@ -81,7 +81,7 @@ class ExecEnv:
         elif "chaos" in task_id: self.active_task = tasks[3]
         else: self.active_task = tasks[0]
             
-        return ExecResult(observation=self._get_obs(), reward=0.01, done=False)
+        return ExecResult(observation=self._get_obs(), reward=0.05, done=False)
 
     def _get_obs(self) -> ExecObservation:
         # Map numerical trust to a categorical level for the agent
@@ -108,8 +108,8 @@ class ExecEnv:
         )
 
     def _update_trust(self, delta: float):
-        self._trust_score = max(0.01, min(0.99, self._trust_score + delta))
-        if self._trust_score <= 0.01:
+        self._trust_score = max(0.05, min(0.95, self._trust_score + delta))
+        if self._trust_score <= 0.05:
             self._last_error = "CRITICAL: The boss has lost all trust in you. Proceed with extreme caution."
 
     async def step(self, action: ExecAction) -> ExecResult:
@@ -179,8 +179,8 @@ class ExecEnv:
             task_step_reward = self.active_task.get_step_reward(self, action)
             reward += task_step_reward
 
-        # Normalize reward to strictly (0.01, 0.99)
-        final_reward = max(0.01, min(0.99, reward))
+        # Normalize reward to strictly (0.05, 0.95) for validator safety
+        final_reward = max(0.05, min(0.95, reward))
         
         # --- Advanced Feature: Real-time Event Injection (Chaos) ---
         if self.active_task and self.active_task.__class__.__name__ == "ChaosSchedulingTask":
@@ -203,7 +203,7 @@ class ExecEnv:
             done=self._done,
             info={
                 "step_reward": task_step_reward,
-                "final_score": self.active_task.evaluate(self) if self.active_task else 0.01,
+                "final_score": self.active_task.evaluate(self) if self.active_task else 0.05,
                 "trust_score": self._trust_score,
                 "error": self._last_error,
                 "reasoning_trace": "\n".join(self._reasoning_trace)
